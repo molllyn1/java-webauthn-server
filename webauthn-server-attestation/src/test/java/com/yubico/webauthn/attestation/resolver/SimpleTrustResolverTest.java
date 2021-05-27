@@ -40,6 +40,8 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 
@@ -104,5 +106,17 @@ public class SimpleTrustResolverTest {
   @Test(expected = RuntimeException.class)
   public void resolveThrowsExceptionOnNoSuchProviderException() throws Exception {
     resolveThrowsExceptionOnUnexpectedError(new NoSuchProviderException("Forced failure"));
+  }
+
+  @Test
+  public void testImportFiles() throws CertificateException {
+    SimpleTrustResolver resolver =
+        SimpleTrustResolver.fromCertStreams(
+            Stream.of(
+                    getClass().getResourceAsStream("/yubico-attestation-root-cert.pem"),
+                    getClass().getResourceAsStream("/yubico-preview-attestation-cert.pem"),
+                    getClass().getResourceAsStream("/yubico-preview-attestation-cert-2.pem"))
+                .collect(Collectors.toList()));
+    assertEquals(resolver.trustedCerts.size(), 3);
   }
 }

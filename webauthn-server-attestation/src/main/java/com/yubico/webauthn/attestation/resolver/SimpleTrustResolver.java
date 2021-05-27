@@ -31,6 +31,7 @@ import com.yubico.internal.util.JacksonCodecs;
 import com.yubico.webauthn.attestation.MetadataObject;
 import com.yubico.webauthn.attestation.TrustResolver;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -54,12 +55,21 @@ public final class SimpleTrustResolver implements TrustResolver {
 
   private static final Logger logger = LoggerFactory.getLogger(SimpleTrustResolver.class);
 
-  private final Multimap<String, X509Certificate> trustedCerts = ArrayListMultimap.create();
+  final Multimap<String, X509Certificate> trustedCerts = ArrayListMultimap.create();
 
   public SimpleTrustResolver(Iterable<X509Certificate> trustedCertificates) {
     for (X509Certificate cert : trustedCertificates) {
       trustedCerts.put(cert.getSubjectDN().getName(), cert);
     }
+  }
+
+  public static SimpleTrustResolver fromCertStreams(Iterable<InputStream> streams)
+      throws CertificateException {
+    Set<X509Certificate> certs = new HashSet<>();
+    for (InputStream is : streams) {
+      certs.add(CertificateParser.parseDer(is));
+    }
+    return new SimpleTrustResolver(certs);
   }
 
   public static SimpleTrustResolver fromMetadata(Iterable<MetadataObject> metadataObjects)
